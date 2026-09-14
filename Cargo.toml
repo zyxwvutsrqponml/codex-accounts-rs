@@ -1,6 +1,6 @@
 [package]
 name = "codex-accounts"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Save and switch named local Codex CLI authentication profiles"
 license = "MIT"

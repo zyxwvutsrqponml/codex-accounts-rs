@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           archive="codex-accounts-${{ matrix.target }}.tar.gz"
-          tar -C "target/${{ matrix.target }}/release" -czf "$archive" codex-accounts
+          tar -czf "$archive" -C "target/${{ matrix.target }}/release" codex-accounts -C "$GITHUB_WORKSPACE" completions
           shasum -a 256 "$archive" > "$archive.sha256"
       - uses: actions/upload-artifact@v4
         with:
@@ -63,7 +63,7 @@ jobs:
         shell: pwsh
         run: |
           $archive = 'codex-accounts-x86_64-pc-windows-msvc.zip'
-          Compress-Archive -Path 'target/x86_64-pc-windows-msvc/release/codex-accounts.exe' -DestinationPath $archive
+          Compress-Archive -Path 'target/x86_64-pc-windows-msvc/release/codex-accounts.exe', 'completions' -DestinationPath $archive
           (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower() + "  " + $archive | Set-Content -NoNewline "$archive.sha256"
       - uses: actions/upload-artifact@v4
         with:

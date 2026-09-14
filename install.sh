@@ -71,3 +71,37 @@ tar -xzf "$temporary_dir/$archive" -C "$temporary_dir"
 mkdir -p "$INSTALL_DIR"
 install -m 755 "$temporary_dir/$BINARY" "$INSTALL_DIR/$BINARY"
 echo "Installed $BINARY to $INSTALL_DIR/$BINARY"
+
+# Tab-completion (end-to-end): prefer the scripts bundled in the release
+# archive, otherwise generate them from the freshly installed binary
+# (`codex-accounts completion <shell>`). Failures here never fail the install.
+install_completion() {
+  shell_name="$1"
+  source_path="$2"
+  destination_path="$3"
+  if [ -f "$source_path" ]; then
+    mkdir -p "$(dirname "$destination_path")"
+    cp "$source_path" "$destination_path"
+    echo "Installed $shell_name completion to $destination_path"
+  elif "$INSTALL_DIR/$BINARY" completion "$shell_name" > "$destination_path.tmp" 2>/dev/null; then
+    mkdir -p "$(dirname "$destination_path")"
+    mv "$destination_path.tmp" "$destination_path"
+    echo "Installed $shell_name completion to $destination_path"
+  else
+    rm -f "$destination_path.tmp"
+  fi
+}
+
+if [ "${CODEX_ACCOUNTS_SKIP_COMPLETIONS:-0}" != "1" ]; then
+  install_completion "bash" "$temporary_dir/completions/codex-accounts.bash" "$HOME/.local/share/bash-completion/completions/codex-accounts" || true
+  install_completion "zsh" "$temporary_dir/completions/codex-accounts.zsh" "$HOME/.zfunc/_codex-accounts" || true
+  install_completion "fish" "$temporary_dir/completions/codex-accounts.fish" "$HOME/.config/fish/completions/codex-accounts.fish" || true
+  cat <<'EOF'
+Tab-completion installed (bash/zsh/fish). Restart your shell.
+  bash: requires bash-completion, installed to ~/.local/share/bash-completion/completions/codex-accounts
+  zsh:  ensure `fpath=(~/.zfunc $fpath)` before `compinit` in ~/.zshrc
+  fish: installed to ~/.config/fish/completions/codex-accounts.fish
+  powershell: add `codex-accounts completion powershell | Out-String | Invoke-Expression` to $PROFILE
+Set CODEX_ACCOUNTS_SKIP_COMPLETIONS=1 to skip this step.
+EOF
+fi
