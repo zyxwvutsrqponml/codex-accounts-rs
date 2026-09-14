@@ -52,5 +52,5 @@ credentials; an OS-keychain-only login may not be copyable as a file.
 ## Releases
 
 Push a version tag such as `v0.1.0` to publish a GitHub release. The release
-workflow builds checked binaries for Linux (x86_64 and ARM64), macOS (Intel and
-Apple Silicon), and Windows (x86_64).
+workflow builds checked binaries for Linux (x86_64 and ARM64), macOS
+(Apple Silicon), and Windows (x86_64).

@@ -22,6 +22,11 @@ case "$arch" in
   *) echo "Error: unsupported architecture: $arch" >&2; exit 1 ;;
 esac
 
+if [ "$target" = "x86_64-apple-darwin" ]; then
+  echo "Error: Intel macOS builds are no longer published. Supported targets: Linux (x86_64, ARM64), macOS (Apple Silicon), Windows (x86_64, manual download)." >&2
+  exit 1
+fi
+
 if [ "$VERSION" = "latest" ]; then
   base_url="https://github.com/$REPOSITORY/releases/latest/download"
 else
