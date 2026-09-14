@@ -1,0 +1,17 @@
+[package]
+name = "codex-accounts"
+version = "0.1.0"
+edition = "2021"
+description = "Save and switch named local Codex CLI authentication profiles"
+license = "MIT"
+repository = "https://github.com/zyxwvutsrqponml/codex-accounts-rs"
+homepage = "https://github.com/zyxwvutsrqponml/codex-accounts-rs"
+readme = "README.md"
+keywords = ["codex", "cli", "auth", "profiles"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+serde_json = "1"
+
+[profile.release]
+strip = true
