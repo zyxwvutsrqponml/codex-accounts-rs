@@ -1,168 +1,206 @@
-# Codex account profiles
+# Codex Accounts
 
 Save and switch named local Codex CLI authentication profiles.
-Rust port of `codex_accounts.py`.
 
-## Install
+Codex Accounts lets you save the current local login under a profile name and
+switch between profiles without repeatedly managing the files by hand. It is
+local-first, lightweight, and designed for predictable use from both terminals
+and scripts.
+
+## Highlights
+
+- Save, activate, list, and remove named profiles.
+- Switch profiles without contacting the authentication server.
+- Atomic file replacement to avoid partially written credentials.
+- Profile-name validation and protected credential files on Unix systems.
+- Plain output for automation and built-in shell completion.
+- Native release builds for Linux, macOS, and Windows.
+
+## Installation
+
+### Linux and macOS
+
+The installer downloads the latest verified release and installs the binary to
+`~/.local/bin`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/zyxwvutsrqponml/codex-accounts-rs/main/install.sh | sh
 ```
 
-The installer downloads the latest release for Linux or macOS, verifies its
-SHA-256 checksum, and places `codex-accounts` in `~/.local/bin`. Ensure that
-directory is on your `PATH`.
-
-Pin a version or change the install location:
+Make sure `~/.local/bin` is on your `PATH`. To install a specific version or
+choose another directory:
 
 ```sh
-CODEX_ACCOUNTS_VERSION=v0.2.0 CODEX_ACCOUNTS_INSTALL_DIR=~/.local/bin sh install.sh
+CODEX_ACCOUNTS_VERSION=v0.2.0 \
+CODEX_ACCOUNTS_INSTALL_DIR="$HOME/.local/bin" \
+sh install.sh
 ```
 
-The installer also sets up tab-completion for bash/zsh/fish.
-Set `CODEX_ACCOUNTS_SKIP_COMPLETIONS=1` to skip that step.
+The installer also configures Bash, Zsh, and Fish completion when supported.
+Set `CODEX_ACCOUNTS_SKIP_COMPLETIONS=1` to skip completion setup.
 
-Windows users: download `codex-accounts-x86_64-pc-windows-msvc.zip` from the
-[latest release](https://github.com/zyxwvutsrqponml/codex-accounts-rs/releases/latest)
-and add `codex-accounts.exe` to your `PATH`.
+### Windows
 
-## Usage
+Download `codex-accounts-x86_64-pc-windows-msvc.zip` from the
+[latest release](https://github.com/zyxwvutsrqponml/codex-accounts-rs/releases/latest),
+extract `codex-accounts.exe`, and add its directory to `PATH`.
 
-This is the Rust port of `scripts/codex_accounts.py`. It manages named local
-Codex CLI authentication profiles while keeping the same layout:
+The release contains a native Windows executable. The Unix `install.sh` script
+is not required on Windows.
+
+## Quick start
+
+After signing in with the Codex CLI, save the active login:
 
 ```text
-$CODEX_HOME/auth.json
-$CODEX_HOME/account-profiles/<name>/auth.json
+codex-accounts save personal
 ```
 
-Build from source with Cargo:
-
-```bash
-cargo build --release
-./target/release/codex-accounts save personal
-./target/release/codex-accounts save work
-./target/release/codex-accounts list
-./target/release/codex-accounts use personal
-```
-
-### Commands
+Create another login and save it under a different name, then switch whenever
+you need to:
 
 ```text
-codex-accounts [--codex-home PATH] [--no-color] [--plain] <command> ...
-
-save NAME [--from AUTH_JSON] [--force]
-use NAME
-list [--plain]
-remove|delete|rm NAME
-new|restart|clear|logout-local
-path
-completion <bash|zsh|fish|powershell>
-help
+codex login
+codex-accounts save work
+codex-accounts list
+codex-accounts use personal
 ```
 
-`delete` and `rm` are aliases of `remove`. `restart`, `clear`
-(and `logout-local`) are aliases of `new`.
+Start a new Codex process after switching profiles.
 
-### Interface
-
-Colors auto-disable when piped, with `NO_COLOR=1`, `CLICOLOR=0`,
-`TERM=dumb`, or `--no-color`. All measurements are exact: table
-columns are padded to the widest value so everything lines up.
+## Commands
 
 ```text
-$ codex-accounts list
-Saved profiles (2):
-  * personal  active
-    work
+codex-accounts [OPTIONS] <COMMAND>
 
-$ codex-accounts path
-CODEX_HOME   /home/kali/.codex
-Active auth  /home/kali/.codex/auth.json
-Profiles     /home/kali/.codex/account-profiles
-
-$ codex-accounts use personal
-✓ Activated profile 'personal'.
-Start a new Codex process to use it.
+Commands:
+  save NAME [--from AUTH_JSON] [--force]  Save the active login
+  use NAME                                Activate a saved profile
+  list [--plain]                          List saved profiles
+  remove NAME                             Delete a saved profile
+  new                                     Clear the active login locally
+  path                                    Show resolved storage paths
+  completion <SHELL>                      Print a completion script
+  help                                    Show help
 ```
 
-For scripts, use stable plain output:
+Aliases are also available: `delete` and `rm` map to `remove`; `restart`,
+`clear`, and `logout-local` map to `new`.
 
-```bash
-codex-accounts --plain list
+Global options:
+
+```text
+--codex-home PATH  Use a custom Codex data directory
+--no-color         Disable colored output
+--plain            Use stable, script-friendly output
+```
+
+Examples:
+
+```sh
+codex-accounts save personal
+codex-accounts save work --from ~/backups/work-auth.json
+codex-accounts use work
 codex-accounts list --plain
-# * personal
-#   work
+codex-accounts remove work
+codex-accounts path
 ```
 
-### Why does `codex logout` break my saved profiles?
+## Storage locations
 
-`codex logout` revokes the token on the server side. Any copy you
-previously made with `codex-accounts save` points to the same revoked
-refresh token, so `codex-accounts use <old-profile>` stops working.
-This is expected OAuth behavior — the tool cannot resurrect a revoked
-token.
+The directory is resolved in this order:
 
-What to do when a saved token is dead:
+1. `--codex-home PATH`
+2. `CODEX_HOME`
+3. The platform's home directory followed by `.codex`
 
-```bash
+Profiles use the same layout as the Codex CLI:
+
+```text
+<CODEX_HOME>/auth.json
+<CODEX_HOME>/account-profiles/<name>/auth.json
+```
+
+Typical defaults are:
+
+```text
+Linux/macOS: $HOME/.codex
+Windows:     %USERPROFILE%\.codex
+```
+
+Use `codex-accounts path` to see the exact paths detected on your machine.
+
+## Shell completion
+
+Completion scripts are available for Bash, Zsh, Fish, and PowerShell.
+
+```sh
+# Bash
+codex-accounts completion bash > ~/.local/share/bash-completion/completions/codex-accounts
+
+# Zsh
+mkdir -p ~/.zfunc
+codex-accounts completion zsh > ~/.zfunc/_codex-accounts
+
+# Fish
+mkdir -p ~/.config/fish/completions
+codex-accounts completion fish > ~/.config/fish/completions/codex-accounts.fish
+```
+
+For PowerShell, add this command to `$PROFILE`:
+
+```powershell
+codex-accounts completion powershell | Out-String | Invoke-Expression
+```
+
+Restart the shell after installing or changing completion files.
+
+## Important authentication behavior
+
+`codex-accounts new` only removes the active local `auth.json`; it does not
+contact the server and does not affect saved profiles.
+
+By contrast, `codex logout` revokes the refresh token on the server. A saved
+profile containing that token will no longer work after logout. To refresh a
+profile, sign in again and overwrite it:
+
+```sh
 codex login
 codex-accounts save personal --force
 ```
 
-To avoid killing saved profiles in the first place, never use
-`codex logout` for switching. Use the local-only reset instead:
+Codex Accounts manages file-backed `auth.json` credentials. A login stored
+only in an operating-system keychain may not be available as a copyable file.
 
-```bash
-codex-accounts new        # or: restart / clear
-codex login
-codex-accounts save newprofile
+## Build from source
+
+To build from source, run:
+
+```sh
+cargo build --release
 ```
 
-`new` only deletes `$CODEX_HOME/auth.json` on disk. It never contacts
-the server, so already-saved profiles stay valid.
+The binary will be written to `target/release/codex-accounts` (or
+`codex-accounts.exe` on Windows).
 
-### Tab-completion (type `a`, press `TAB` → `abcd`)
+Run the test suite with:
 
-Profile names, subcommands, and flags complete in bash, zsh, fish, and
-PowerShell end to end:
-
-```bash
-codex-accounts use a<TAB>        # completes to saved profile, e.g. abcd
-codex-accounts remove w<TAB>     # completes saved profile for delete/remove/rm
-codex-accounts completion <TAB>  # completes: bash zsh fish powershell
+```sh
+cargo test --locked
 ```
-
-Setup (the `install.sh` installer already does the first three):
-
-```bash
-# bash (requires bash-completion)
-codex-accounts completion bash > ~/.local/share/bash-completion/completions/codex-accounts
-
-# zsh
-mkdir -p ~/.zfunc
-codex-accounts completion zsh > ~/.zfunc/_codex-accounts
-# add to ~/.zshrc BEFORE `compinit`: fpath=(~/.zfunc $fpath)
-
-# fish
-mkdir -p ~/.config/fish/completions
-codex-accounts completion fish > ~/.config/fish/completions/codex-accounts.fish
-
-# PowerShell (add to $PROFILE)
-codex-accounts completion powershell | Out-String | Invoke-Expression
-```
-
-Completion resolves profiles from `${CODEX_HOME:-~/.codex}/account-profiles/*/auth.json`
-and honors `--codex-home` / `$CODEX_HOME`. Restart your shell after installing.
-
-The default home is `CODEX_HOME`, then `~/.codex`. The tool never prints
-credential contents, restricts profile directories/files on Unix, validates
-profile names, and uses an atomic replacement for `auth.json`. Start a new
-Codex process after switching. This tool is for file-backed `auth.json`
-credentials; an OS-keychain-only login may not be copyable as a file.
 
 ## Releases
 
-Push a version tag such as `v0.2.0` to publish a GitHub release. The release
-workflow builds checked binaries for Linux (x86_64 and ARM64), macOS
-(Apple Silicon), and Windows (x86_64).
+Releases are published from version tags such as `v0.2.0`. Automated builds
+produce verified archives for:
+
+- Linux x86_64 and ARM64
+- macOS Apple Silicon
+- Windows x86_64
+
+See the [release page](https://github.com/zyxwvutsrqponml/codex-accounts-rs/releases)
+for downloads and checksums.
+
+## License
+
+MIT
